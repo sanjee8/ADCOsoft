@@ -31,7 +31,8 @@ const styles = StyleSheet.create({
     },
     forgot_link: {
         color: '#869191',
-        fontSize:11
+        fontSize: 13,
+        marginTop: 20
     },
     login_button:{
         width:"70%",
@@ -45,6 +46,12 @@ const styles = StyleSheet.create({
     },
     login_text: {
         color: 'white'
+    },
+    success: {
+        color: "green",
+    },
+    error: {
+        color: "red"
     }
 });
 

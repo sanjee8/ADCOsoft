@@ -6,17 +6,26 @@ import Login from "./components/Login";
 import Home from "./components/Home";
 
 const PageStack = createStackNavigator();
+let isSignedIn = true;
 
 export default function App() {
-  return (
-      <View style={{flex:1}}>
 
-        <NavigationContainer>
-          <PageStack.Navigator>
-            <PageStack.Screen name="Login" component={Login} options={{title: "Se connecter"}}/>
-            <PageStack.Screen name="Home" component={Home} options={{title: "Vos dossiers"}}/>
-          </PageStack.Navigator>
-        </NavigationContainer>
-      </View>
-  );
+    return (
+        <View style={{flex:1}}>
+
+            <NavigationContainer>
+                {
+                    isSignedIn ? (
+                        <PageStack.Navigator>
+                            <PageStack.Screen name="Home" component={Home} options={{title: "Vos dossiers"}}/>
+                        </PageStack.Navigator>
+                    ) : (
+                        <PageStack.Navigator>
+                            <PageStack.Screen name="Login" component={Login} options={{title: "Se connecter"}}/>
+                        </PageStack.Navigator>
+                    )
+                }
+            </NavigationContainer>
+        </View>
+    );
 }

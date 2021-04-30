@@ -1,50 +1,76 @@
 import React from 'react'
-import {View, Text, TextInput, TouchableOpacity} from "react-native";
+import {View, Text, TouchableOpacity} from "react-native";
 import {styles} from '../styles/auth'
+import PhoneInput from "react-native-phone-number-input";
 
 export default class Login extends React.Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            mail: null,
-            code: null,
-            err_mail: null,
-            err_code: null
+            phone: null,
+            response: null
         };
     }
 
+    submit() {
 
+        if(!this.phoneInput.isValidNumber(this.state.phone)) {
+            this.setState({response: this.response_error("Le numéro est incorrecte !")})
+        } else {
+            this.setState({response: null})
+            global.isSignedIn = true;
+        }
 
-    isMailError() {
-        return this.state.err_mail !== null;
     }
+
+    response_success(text) {
+        return(
+            <Text style={styles.success}>
+                {text}
+            </Text>
+        )
+    }
+
+    response_error(text) {
+        return(
+            <Text style={styles.error}>
+                {text}
+            </Text>
+        )
+    }
+
 
 
     render() {
         return(
             <View style={styles.container}>
-                <Text style={styles.main_text}>Se connecter</Text>
+                <Text style={styles.main_text}>Authentification</Text>
 
-                <View style={[styles.input_view, this.isMailError() && styles.input_v_err ]} >
-                    <TextInput
-                        style={styles.input_text}
-                        placeholder="Adresse mail.."
-                        placeholderTextColor="#003f5c"
-                        onChangeText={text => this.setState({err_mail:text})}/>
+                <View>
+                    {this.state.response}
                 </View>
-                <View style={styles.input_view} >
-                    <TextInput
-                        style={styles.input_text}
-                        placeholder="Code d'accès.."
-                        placeholderTextColor="#003f5c"
-                        onChangeText={text => this.setState({code:text})}
-                        secureTextEntry />
-                </View>
+
+
+                    <PhoneInput
+                        ref={input => {
+                            this.phoneInput = input
+                        }}
+                        onChangeText={(text) => {
+                            this.setState({phone: text});
+                        }}
+                        defaultCode="FR"
+                        layout="first"
+                        withDarkTheme
+                        withShadow
+                        autoFocus
+                        placeholder="Numéro de téléphone"
+                    />
+
                 <TouchableOpacity>
                     <Text style={styles.forgot_link}>Vous n'arrivez pas à vous connecter ?</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.login_button}>
+                <TouchableOpacity onPress={() => this.submit()} style={styles.login_button}>
                     <Text style={styles.login_text}>Se connecter</Text>
                 </TouchableOpacity>
 
