@@ -1,14 +1,19 @@
 import React from 'react'
 import {TouchableOpacity, Text, StyleSheet} from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import Details from "./Details";
 
 
 
 export default class Folder extends React.Component {
 
+    details() {
+        this.props.navigation.navigate("Details")
+    }
+
     render() {
         return (
-            <TouchableOpacity onPress={() => alert("test")} style={folder.view}>
+            <TouchableOpacity onPress={() => this.details()} style={folder.view}>
                 <Text style={folder.name}>{this.props.name} dfgfd dd</Text>
                 <Text><Ionicons name="chevron-forward-outline" size={24}/></Text>
             </TouchableOpacity>
