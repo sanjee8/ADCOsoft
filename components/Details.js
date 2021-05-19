@@ -1,10 +1,12 @@
 import React, {useState} from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text, Modal} from "react-native";
+import { View, FlatList, StyleSheet, TouchableOpacity, Text, Modal, Image} from "react-native";
 import Element from "./Element";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {Audio} from "expo-av";
 import * as FileSystem from "expo-file-system";
-
+import * as ImagePicker from 'expo-image-picker';
+import NetInfo from '@react-native-community/netinfo';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const DATA = [
     {
@@ -34,12 +36,13 @@ let interval;
 
 const Details = ({navigation, route}) => {
 
-
+    const [type, setType] = useState(false);
     const [recording, setRecording] = React.useState();
     const [modalVisible, setModalVisible] = useState(false);
     const [uri, setUri] = useState(null);
     const [recordTime, setRecordTime] = useState("0:00");
     const [replaying, setReplaying] = useState(null);
+    const [image, setImage] = useState(null)
 
 
     let timer = 0;
@@ -102,6 +105,7 @@ const Details = ({navigation, route}) => {
 
     }
 
+
     /**
      * Replay recorded sound
      * @returns {Promise<void>}
@@ -112,13 +116,29 @@ const Details = ({navigation, route}) => {
         }
     }
 
-
     /**
-     * Upload recorded sound
+     * Check internet connection before upload
      * @param uri
+     * @param type
      * @returns {Promise<void>}
      */
-    async function uploadAudioAsync(uri) {
+    async function uploadCheck(uri, type = true) {
+        NetInfo.fetch().then(state => {
+            if(state.isConnected) {
+                uploadAsync(uri, type)
+            } else {
+                // ADD TO WAITING LIST
+            }
+        });
+    }
+
+    /**
+     * Upload document
+     * @param uri String
+     * @param type Boolean
+     * @returns {Promise<void>}
+     */
+    async function uploadAsync(uri, type = true) {
 
         let apiUrl = 'https://rsanjeevan.fr/adcosoft.php'; // HTTPS OBLIGATOIRE
         let uriParts = uri.split('.');
@@ -146,17 +166,11 @@ const Details = ({navigation, route}) => {
 
         await fetch(apiUrl, options);
 
-        await cancelRecord();
-    }
-
-    /**
-     * Start recording
-     * @returns null
-     */
-    function recordAudio() {
-        setModalVisible(true)
-        startRecording()
-        initTimer()
+        if(type) {
+            await cancelRecord();
+        } else {
+            cancelPhoto()
+        }
     }
 
     /**
@@ -237,7 +251,7 @@ const Details = ({navigation, route}) => {
                             <Text style={detail.choiceDeny}>Annuler</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => uploadAudioAsync(uri)}>
+                        <TouchableOpacity onPress={() => uploadCheck(uri)}>
                             <Text style={detail.choiceAccept}>Envoyer</Text>
                         </TouchableOpacity>
                     </View>
@@ -264,7 +278,166 @@ const Details = ({navigation, route}) => {
             await recording.stopAndUnloadAsync();
     }
 
+    /**
+     * Start photo import
+     * @returns {Promise<void>}
+     */
+    async function selectPhoto() {
+        setType(true)
+        setModalVisible(true)
+    }
 
+    /**
+     * Start recording
+     * @returns null
+     */
+    function recordAudio() {
+        setType(false)
+        setModalVisible(true)
+        startRecording()
+        initTimer()
+    }
+
+    /**
+     * Open camera
+     * @returns {Promise<void>}
+     */
+    async function cameraPhoto() {
+        const permPhoto  = ImagePicker.requestCameraPermissionsAsync()
+        if(permPhoto) {
+
+            let result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 1,
+            })
+
+            if (!result.cancelled) {
+                uploadPhoto(result.uri)
+            }
+
+        } else {
+            alert("Vous devez autoriser l'application à accéder à la camera.")
+        }
+    }
+
+    /**
+     * Open library
+     * @returns {Promise<void>}
+     */
+    async function libraryPhoto() {
+        const permPhoto  = ImagePicker.requestMediaLibraryPermissionsAsync()
+        if(permPhoto) {
+
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 1,
+            })
+
+            if (!result.cancelled) {
+                uploadPhoto(result.uri)
+            }
+
+        } else {
+            alert("Vous devez autoriser l'application à accéder à la bibliothèque.")
+        }
+    }
+
+    /**
+     * Upload immage
+     * @param uri
+     */
+    function uploadPhoto (uri) {
+        setUri(uri)
+        setImage(uri);
+    }
+
+
+    /**
+     * Block buttons upload photos
+     * @returns {JSX.Element}
+     */
+    function imageImporter() {
+        if(image == null) {
+            return (
+                <View>
+                    <View style={detail.choicePhoto}>
+                        <TouchableOpacity onPress={() => cameraPhoto()}>
+                            <Text style={detail.choicePh}>Prendre une photo</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => libraryPhoto()}>
+                            <Text style={detail.choicePh}>Choisir dans la bibliothèque</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => cancelPhoto()}>
+                            <Text style={detail.choicePh}>Annuler</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                </View>
+            )
+        } else {
+            return (
+                <View style={detail.photoConfirm}>
+                    {image && <Image source={{ uri: image }} style={{ width: 250, height: 250 }} />}
+
+                    <Text style={detail.surText}>Êtes vous sûr de vouloir envoyer cette image ?</Text>
+
+                    <View style={detail.choice}>
+                        <TouchableOpacity onPress={() => cancelPhoto()}>
+                            <Text style={detail.choiceDeny}>Annuler</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => uploadCheck(uri, false)}>
+                            <Text style={detail.choiceAccept}>Envoyer</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )
+
+        }
+
+    }
+
+    /**
+     * Cancel upload photo process
+     */
+    function cancelPhoto() {
+        setImage(null)
+        setModalVisible(false)
+    }
+
+    /**
+     * Modal content
+     * @returns {JSX.Element}
+     */
+    function modalContent() {
+        if(type) {
+            return (
+                <View style={detail.modalView}>
+                    <Text style={detail.modalText}><Ionicons name="image-outline" size={42}/></Text>
+                    {imageImporter()}
+                </View>
+            )
+        } else {
+            return (
+                <View style={detail.modalView}>
+                    <Text style={detail.modalText}><Ionicons name="mic-outline" size={42}/></Text>
+                    <Text style={detail.modalText}>Enregistrement en cours..</Text>
+                    <Text>{recordTime}</Text>
+                    {Buttons()}
+                </View>
+            )
+        }
+    }
+
+    /**
+     * Main page
+     */
     return (
         <View style={{height: 675}}>
 
@@ -286,25 +459,22 @@ const Details = ({navigation, route}) => {
                     onRequestClose={() => {
                         setModalVisible(!modalVisible);
                         cancelRecord()
+                        cancelPhoto()
                     }}
                 >
                     <View style={detail.centeredView}>
-                        <View style={detail.modalView}>
-                            <Text style={detail.modalText}><Ionicons name="mic-outline" size={42}/></Text>
-                            <Text style={detail.modalText}>Enregistrement en cours..</Text>
-                            <Text>{recordTime}</Text>
-                            {Buttons()}
-                        </View>
+                        {modalContent()}
                     </View>
                 </Modal>
 
             </View>
 
+
             <TouchableOpacity style={detail.btn_mic} onPress={() => recordAudio()}>
                 <Text style={[modalVisible ? detail.btn_text_active : detail.btn_text]}><Ionicons name="mic-outline" size={42}/></Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={detail.btn_photo}>
+            <TouchableOpacity style={detail.btn_photo} onPress={selectPhoto}>
                 <Text style={detail.btn_text}><Ionicons name="image-outline" size={42}/></Text>
             </TouchableOpacity>
         </View>
@@ -317,10 +487,26 @@ const Details = ({navigation, route}) => {
 
 export default Details;
 
+
 const detail = StyleSheet.create({
+    photoConfirm: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     choice: {
         flexDirection: 'row',
         justifyContent: "center"
+    },
+    choicePhoto: {
+        flexDirection: 'column',
+        justifyContent: "center"
+    },
+    choicePh: {
+        backgroundColor: "#e8e8e8",
+        padding: 10,
+        width: 200,
+        textAlign: "center",
+        margin: 1
     },
     choiceDeny: {
         backgroundColor: "#ed6868",
@@ -336,7 +522,8 @@ const detail = StyleSheet.create({
     },
     surText: {
         padding: 10,
-        marginTop: 10
+        marginTop: 10,
+        textAlign: "center"
     },
     modalBtnReplay: {
         marginBottom: 15,
