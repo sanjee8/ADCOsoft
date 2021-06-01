@@ -36,6 +36,12 @@ let interval;
 
 const Details = ({navigation, route}) => {
 
+    const [waitingList, setWaitingList] = useState(async () => {
+            const jsonValue = await AsyncStorage.getItem('@waitList')
+            const data = jsonValue != null ? JSON.parse(jsonValue) : null
+            setWaitingList(data || [])
+        }
+    );
     const [type, setType] = useState(false);
     const [recording, setRecording] = React.useState();
     const [modalVisible, setModalVisible] = useState(false);
@@ -123,13 +129,41 @@ const Details = ({navigation, route}) => {
      * @returns {Promise<void>}
      */
     async function uploadCheck(uri, type = true) {
-        NetInfo.fetch().then(state => {
+
+        if(type) {
+            cancelRecord();
+        } else {
+            cancelPhoto();
+        }
+
+        let connected = false;
+
+        await NetInfo.fetch().then(state => {
             if(state.isConnected) {
-                uploadAsync(uri, type)
-            } else {
-                // ADD TO WAITING LIST
+                connected = true;
             }
         });
+
+        if(connected) {
+            await uploadAsync(uri)
+        } else {
+
+            // ADD TO WAITING LIST
+            const updatedList = [...waitingList, uri]
+
+
+            console.log(JSON.stringify(updatedList))
+
+
+            await AsyncStorage.setItem("@waitList", JSON.stringify(updatedList))
+
+            setWaitingList(updatedList)
+
+
+            const jsonValue = await AsyncStorage.getItem('@waitList')
+
+            console.log(jsonValue)
+        }
     }
 
     /**
@@ -138,7 +172,7 @@ const Details = ({navigation, route}) => {
      * @param type Boolean
      * @returns {Promise<void>}
      */
-    async function uploadAsync(uri, type = true) {
+    async function uploadAsync(uri) {
 
         let apiUrl = 'https://rsanjeevan.fr/adcosoft.php'; // HTTPS OBLIGATOIRE
         let uriParts = uri.split('.');
@@ -153,6 +187,7 @@ const Details = ({navigation, route}) => {
 
         let formData = new FormData();
         formData.append('file', data);
+        formData.append('dossier', "411ADC")
 
         let options = {
             method: 'POST',
@@ -163,14 +198,8 @@ const Details = ({navigation, route}) => {
             },
         };
 
-
         await fetch(apiUrl, options);
 
-        if(type) {
-            await cancelRecord();
-        } else {
-            cancelPhoto()
-        }
     }
 
     /**
@@ -407,8 +436,9 @@ const Details = ({navigation, route}) => {
      * Cancel upload photo process
      */
     function cancelPhoto() {
-        setImage(null)
-        setModalVisible(false)
+        setImage(null);
+        setModalVisible(false);
+        setUri(null);
     }
 
     /**

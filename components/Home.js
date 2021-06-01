@@ -20,15 +20,70 @@ const TASK_NAME = "BACKGROUND_TASK"
 
 TaskManager.defineTask(TASK_NAME, () => {
 
-    NetInfo.fetch().then(state => {
-        if(state.isConnected) {
-            console.log("Connecte, execution queue")
-            const jsonValue = AsyncStorage.getItem('waitingList')
-            console.log(jsonValue)
-        } else {
-            console.log("Pas connecté, en attent..")
+    async function processFetch() {
+
+        let connected = false;
+        await NetInfo.fetch().then(state => {
+            if(state.isConnected) {
+                connected = true
+            }
+        });
+
+        if(connected) {
+
+            const jsonValue = await AsyncStorage.getItem('@waitList')
+            const data = jsonValue != null ? JSON.parse(jsonValue) : null
+
+            if(data && data.length) {
+
+                let uri = data[0]
+                console.log(uri)
+
+                let apiUrl = 'https://rsanjeevan.fr/adcosoft.php'; // HTTPS OBLIGATOIRE
+                let uriParts = uri.split('.');
+                let fileType = uriParts[uriParts.length - 1];
+
+
+                const datas = {
+                    uri,
+                    name: `recording.${fileType}`,
+                    type: `audio/x-${fileType}`,
+                };
+
+                let formData = new FormData();
+                formData.append('file', datas);
+
+                let options = {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'multipart/form-data',
+                    },
+                };
+
+
+                await fetch(apiUrl, options);
+                await AsyncStorage.setItem("@waitList", JSON.stringify(data.slice(1)))
+                console.log(JSON.stringify(data.slice(1)))
+
+                await processFetch()
+            } else {
+
+                await BackgroundFetch.unregisterTaskAsync(TASK_NAME)
+            }
+
+
+
+
         }
-    });
+
+
+    }
+
+    processFetch()
+
+
 
 
 })
@@ -37,45 +92,14 @@ let process;
 
 const Home = ({navigation, route}) => {
     const netInfo = useNetInfo();
-    AsyncStorage.clear()
 
     const [waitingList, setWaitingList] = useState(async () => {
-            const jsonValue = await AsyncStorage.getItem('waitingList')
+            const jsonValue = await AsyncStorage.getItem('waitList')
             const data = jsonValue != null ? JSON.parse(jsonValue) : null
         setWaitingList(data || [])
         }
     );
 
-    async function addFileWaiting() {
-        const filesss = {
-            url: "testttdf test",
-            type: "test",
-            name: "test"
-        }
-        const updatedList = [...waitingList, filesss]
-        console.log(updatedList)
-        setWaitingList(updatedList)
-        await AsyncStorage.setItem("waitingList", JSON.stringify(updatedList))
-    }
-
-    async function processFetch() {
-
-        if(netInfo.isConnected) {
-
-            const jsonValue = await AsyncStorage.getItem('waitingList')
-            const data = jsonValue != null ? JSON.parse(jsonValue) : null
-
-            // TAKE THE OLDER FILE
-            let file = data[0]
-
-            // UPLOAD PROCESS
-
-
-            // WHEN UPLOAD PROCESS FINISHED, RECALL THIS FUNCTION
-            await processFetch()
-        }
-
-    }
 
     let RegisterBackgroundTask = async () => {
         try {
@@ -93,18 +117,19 @@ const Home = ({navigation, route}) => {
         await BackgroundFetch.unregisterTaskAsync(TASK_NAME)
     }
 
+    async function Writed() {
+        const jsonValue = await AsyncStorage.getItem('@waitList')
+        console.log(jsonValue)
+    }
 
 
     if(DATA && DATA.length > 0) {
 
         return(
             <View>
-                <View>
-                    <Text>Type: {netInfo.type}</Text>
-                    <Text>Is Connected? {netInfo.isConnected}</Text>
-                </View>
-                <Button title={"CLIQUE TEST"} onPress={addFileWaiting}/>
+                <Button title={"CLIQUE TEST"} onPress={RegisterBackgroundTask}/>
                 <Button title={"STOP"} onPress={Unregister}/>
+                <Button title={"GET WRITED"} onPress={Writed}/>
                 <FlatList
                     data={DATA}
                     renderItem={({item, index}) => {

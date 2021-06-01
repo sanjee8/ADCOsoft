@@ -15,19 +15,23 @@ const styles = StyleSheet.create({
     },
     input_view: {
         width:"80%",
-        backgroundColor:"#ddebeb",
-        borderRadius:10,
+        backgroundColor:"#F8F9F9",
         height:50,
         marginBottom:20,
+        marginTop: 15,
         justifyContent:"center",
-        padding:20
+        padding:20,
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     input_v_err: {
         backgroundColor: "red"
     },
     input_text: {
         height:50,
-        color:"black"
+        color:"black",
+        fontSize: 16
     },
     forgot_link: {
         color: '#869191',
