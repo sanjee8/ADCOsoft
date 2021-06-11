@@ -1,26 +1,20 @@
 import React, {useState} from 'react'
-import {View, Text, FlatList, Button} from "react-native";
+import {  View, Text, FlatList} from "react-native";
 import Folder from "./Folder";
 import {styles} from '../styles/main'
 import * as BackgroundFetch from "expo-background-fetch"
 import * as TaskManager from "expo-task-manager"
-import {useNetInfo} from "@react-native-community/netinfo";
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const DATA = [
-    {
-        id: '1',
-        title: "salut dfgfdg ",
-        type: "mic"
-    }
-];
 
 const TASK_NAME = "BACKGROUND_TASK"
 
 TaskManager.defineTask(TASK_NAME, () => {
 
     async function processFetch() {
+
+        console.log("PROCESS UPLOAD")
 
         let connected = false;
         await NetInfo.fetch().then(state => {
@@ -36,22 +30,23 @@ TaskManager.defineTask(TASK_NAME, () => {
 
             if(data && data.length) {
 
-                let uri = data[0]
-                console.log(uri)
+                let object_file = data[0]
+                console.log(object_file.uri)
 
-                let apiUrl = 'https://rsanjeevan.fr/adcosoft.php'; // HTTPS OBLIGATOIRE
-                let uriParts = uri.split('.');
+                let apiUrl = 'http://95.142.174.98/ADCOsoft1/?p=upload_doc'; // HTTPS OBLIGATOIRE
+                let uriParts = object_file.uri.split('.');
                 let fileType = uriParts[uriParts.length - 1];
 
 
                 const datas = {
-                    uri,
+                    uri: object_file.uri,
                     name: `recording.${fileType}`,
                     type: `audio/x-${fileType}`,
                 };
 
                 let formData = new FormData();
                 formData.append('file', datas);
+                formData.append('dossier', object_file.dossier);
 
                 let options = {
                     method: 'POST',
@@ -69,7 +64,6 @@ TaskManager.defineTask(TASK_NAME, () => {
 
                 await processFetch()
             } else {
-
                 await BackgroundFetch.unregisterTaskAsync(TASK_NAME)
             }
 
@@ -88,53 +82,29 @@ TaskManager.defineTask(TASK_NAME, () => {
 
 })
 
-let process;
 
-const Home = ({navigation, route}) => {
-    const netInfo = useNetInfo();
+const Home = ({navigation}) => {
 
-    const [waitingList, setWaitingList] = useState(async () => {
-            const jsonValue = await AsyncStorage.getItem('waitList')
+
+    const [dossier, setDossier] = useState(async () => {
+            const jsonValue = await AsyncStorage.getItem('@auth')
             const data = jsonValue != null ? JSON.parse(jsonValue) : null
-        setWaitingList(data || [])
+        setDossier(data || [])
         }
     );
 
 
-    let RegisterBackgroundTask = async () => {
-        try {
-            await BackgroundFetch.registerTaskAsync(TASK_NAME, {
-                minimumInterval: 5, // seconds,
-            })
-            console.log("Task enregistre")
 
-        } catch (err) {
-            console.log("Task Register failed:", err)
-        }
-    }
+    if(dossier && dossier.length > 0) {
 
-    let Unregister = async () => {
-        await BackgroundFetch.unregisterTaskAsync(TASK_NAME)
-    }
-
-    async function Writed() {
-        const jsonValue = await AsyncStorage.getItem('@waitList')
-        console.log(jsonValue)
-    }
-
-
-    if(DATA && DATA.length > 0) {
 
         return(
             <View>
-                <Button title={"CLIQUE TEST"} onPress={RegisterBackgroundTask}/>
-                <Button title={"STOP"} onPress={Unregister}/>
-                <Button title={"GET WRITED"} onPress={Writed}/>
                 <FlatList
-                    data={DATA}
+                    data={dossier}
                     renderItem={({item, index}) => {
                         return (
-                            <Folder name={item.title} navigation={navigation} index={index}/>
+                            <Folder name={item.name} id={item.id} navigation={navigation} index={index}/>
                         )
                     }}
                 />

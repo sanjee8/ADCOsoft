@@ -1,37 +1,13 @@
 import React, {useState} from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text, Modal, Image} from "react-native";
-import Element from "./Element";
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Image} from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {Audio} from "expo-av";
-import * as FileSystem from "expo-file-system";
 import * as ImagePicker from 'expo-image-picker';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as BackgroundFetch from "expo-background-fetch";
 
-const DATA = [
-    {
-        id: '1',
-        title: "salut dfgfdg ",
-        type: "pdf"
-    },
-    {
-        id: '1',
-        title: "salut dfgfdg ",
-        type: "mic"
-    },
-    {
-        id: '1',
-        title: "salut dfgfdg ",
-        type: "mic"
-    },
-    {
-        id: '1',
-        title: "salut dfgfdg ",
-        type: "pdf"
-    },
-];
-
-
+const TASK_NAME = "BACKGROUND_TASK"
 let interval;
 
 const Details = ({navigation, route}) => {
@@ -144,12 +120,15 @@ const Details = ({navigation, route}) => {
             }
         });
 
+        var object_file = {dossier: route.params.id, uri: uri}
+
         if(connected) {
-            await uploadAsync(uri)
+            await uploadAsync(object_file)
         } else {
 
+
             // ADD TO WAITING LIST
-            const updatedList = [...waitingList, uri]
+            const updatedList = [...waitingList, object_file]
 
 
             console.log(JSON.stringify(updatedList))
@@ -162,32 +141,41 @@ const Details = ({navigation, route}) => {
 
             const jsonValue = await AsyncStorage.getItem('@waitList')
 
+            try {
+                await BackgroundFetch.registerTaskAsync(TASK_NAME, {
+                    minimumInterval: 5, // seconds,
+                })
+                console.log("Task enregistre")
+
+            } catch (err) {
+                console.log("Task Register failed:", err)
+            }
+
             console.log(jsonValue)
         }
     }
 
     /**
-     * Upload document
-     * @param uri String
-     * @param type Boolean
+     *
+     * @param object_file
      * @returns {Promise<void>}
      */
-    async function uploadAsync(uri) {
+    async function uploadAsync(object_file) {
 
-        let apiUrl = 'https://rsanjeevan.fr/adcosoft.php'; // HTTPS OBLIGATOIRE
+        let apiUrl = 'http://95.142.174.98/ADCOsoft1/adcosoft.php'; // HTTPS OBLIGATOIRE
         let uriParts = uri.split('.');
         let fileType = uriParts[uriParts.length - 1];
 
 
         const data = {
-            uri,
+            uri : object_file.uri,
             name: `recording.${fileType}`,
-            type: `audio/x-${fileType}`,
+            type: `audio/x-${fileType}`
         };
 
         let formData = new FormData();
         formData.append('file', data);
-        formData.append('dossier', "411ADC")
+        formData.append('dossier', object_file.dossier)
 
         let options = {
             method: 'POST',
@@ -198,7 +186,12 @@ const Details = ({navigation, route}) => {
             },
         };
 
-        await fetch(apiUrl, options);
+        let response = await fetch(apiUrl, options);
+
+        let json = await response.json();
+
+
+        console.log(json)
 
     }
 
@@ -471,7 +464,7 @@ const Details = ({navigation, route}) => {
     return (
         <View style={{height: 675}}>
 
-            <FlatList
+{/*            <FlatList
                 data={DATA}
                 renderItem={({ item }) => (
                     <Element item={item} />
@@ -479,7 +472,13 @@ const Details = ({navigation, route}) => {
 
                 numColumns={3}
                 keyExtractor={(item, index) => index}
-            />
+            />*/}
+
+            <View style={detail.textView}>
+                <Text style={detail.textDetail}>
+                    Utilisez les boutons en dessous pour envoyer un Audio ou une image.
+                </Text>
+            </View>
 
             <View style={detail.centeredView}>
                 <Modal
@@ -519,6 +518,12 @@ export default Details;
 
 
 const detail = StyleSheet.create({
+    textView: {
+        margin: 50,
+    },
+    textDetail: {
+          textAlign: 'center'
+    },
     photoConfirm: {
         justifyContent: 'center',
         alignItems: 'center',

@@ -29,20 +29,25 @@ export default class Login extends React.Component {
 
                 this.setState({response: null, loading: true})
 
-                console.log(this.state.formatted)
+                console.log(JSON.stringify({
+                    number: this.state.formatted,
+                    email: this.state.email
+                }));
 
 
-                let response = await fetch('http://95.142.174.98/ADCOsoft1/?p=login_app', {
+                const formData = new FormData();
+                formData.append("number", this.state.formatted);
+                formData.append("email", this.state.email);
+
+                let options = {
                     method: 'POST',
+                    body: formData,
                     headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json'
+                        'Accept': 'application/json',
+                        'Content-Type': 'multipart/form-data',
                     },
-                    body: JSON.stringify({
-                        number: this.state.formatted,
-                        email: this.state.email
-                    })
-                });
+                };
+                let response = await fetch('http://95.142.174.98/ADCOsoft1/?p=login_app', options)
 
                 let json = await response.json();
 

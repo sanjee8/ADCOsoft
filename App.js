@@ -27,8 +27,8 @@ export default function App() {
                     {
                         isSignedIn ? (
                             <PageStack.Navigator>
-                                <PageStack.Screen name="Home" component={Home} options={{title: "Vos dossiers"}}/>
-                                <PageStack.Screen name="Details" component={Details} options={{title: "Mon dossier"}}/>
+                                <PageStack.Screen name="Home" component={Home} options={{title: "Vos dossiers"}} />
+                                <PageStack.Screen name="Details" component={Details} options={({ route }) => ({ title: route.params.name })}/>
                             </PageStack.Navigator>
                         ) : (
                             <PageStack.Navigator>

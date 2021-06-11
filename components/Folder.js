@@ -8,13 +8,13 @@ import Details from "./Details";
 export default class Folder extends React.Component {
 
     details() {
-        this.props.navigation.navigate("Details")
+        this.props.navigation.navigate("Details", { name: this.props.name, id: this.props.id })
     }
 
     render() {
         return (
             <TouchableOpacity onPress={() => this.details()} style={folder.view}>
-                <Text style={folder.name}>{this.props.name} dfgfd dd</Text>
+                <Text style={folder.name}>{this.props.name}</Text>
                 <Text><Ionicons name="chevron-forward-outline" size={24}/></Text>
             </TouchableOpacity>
         )
