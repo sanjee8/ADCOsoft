@@ -167,11 +167,21 @@ const Details = ({navigation, route}) => {
         let fileType = uriParts[uriParts.length - 1];
 
 
-        const data = {
-            uri : object_file.uri,
-            name: `recording.${fileType}`,
-            type: `audio/x-${fileType}`
-        };
+        let data;
+        if(fileType === "jpg") {
+            data = {
+                uri : object_file.uri,
+                name: `image.${fileType}`,
+                type: `image/jpeg`
+            };
+        } else {
+            data = {
+                uri : object_file.uri,
+                name: `audio.${fileType}`,
+                type: `audio/x-${fileType}`
+            };
+        }
+
 
         let formData = new FormData();
         formData.append('file', data);
@@ -190,7 +200,11 @@ const Details = ({navigation, route}) => {
 
         let json = await response.json();
 
-
+        if(json[0] === true) {
+            console.log("File uploaded")
+        } else {
+            alert(json[1])
+        }
         console.log(json)
 
     }
@@ -495,17 +509,17 @@ const Details = ({navigation, route}) => {
                         {modalContent()}
                     </View>
                 </Modal>
+                <TouchableOpacity style={detail.btn_mic} onPress={() => recordAudio()}>
+                    <Text style={[modalVisible ? detail.btn_text_active : detail.btn_text]}><Ionicons name="mic-outline" size={42}/></Text>
+                </TouchableOpacity>
 
+                <TouchableOpacity style={detail.btn_photo} onPress={selectPhoto}>
+                    <Text style={detail.btn_text}><Ionicons name="image-outline" size={42}/></Text>
+                </TouchableOpacity>
             </View>
 
 
-            <TouchableOpacity style={detail.btn_mic} onPress={() => recordAudio()}>
-                <Text style={[modalVisible ? detail.btn_text_active : detail.btn_text]}><Ionicons name="mic-outline" size={42}/></Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity style={detail.btn_photo} onPress={selectPhoto}>
-                <Text style={detail.btn_text}><Ionicons name="image-outline" size={42}/></Text>
-            </TouchableOpacity>
         </View>
 
 
@@ -617,23 +631,24 @@ const detail = StyleSheet.create({
         borderRadius: 5,
         margin: 15
     },
+
     btn_mic: {
-        position: 'absolute',
+
         width: 50,
         height: 50,
         alignItems: 'center',
         justifyContent: 'center',
         right: 100,
-        bottom: 30,
+        bottom: 150,
     },
     btn_photo: {
-        position: 'absolute',
+
         width: 50,
         height: 50,
         alignItems: 'center',
         justifyContent: 'center',
-        right: 250,
-        bottom: 30,
+        right: -100,
+        bottom: 200,
     },
     btn_text: {
         borderRadius: 50,

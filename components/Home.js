@@ -1,11 +1,12 @@
 import React, {useState} from 'react'
-import {  View, Text, FlatList} from "react-native";
+import {View, Text, FlatList, TouchableOpacity} from "react-native";
 import Folder from "./Folder";
 import {styles} from '../styles/main'
 import * as BackgroundFetch from "expo-background-fetch"
 import * as TaskManager from "expo-task-manager"
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 
 const TASK_NAME = "BACKGROUND_TASK"
@@ -83,7 +84,15 @@ TaskManager.defineTask(TASK_NAME, () => {
 })
 
 
-const Home = ({navigation}) => {
+const Home = ({deco,navigation}) => {
+
+    async function logout() {
+
+        await AsyncStorage.setItem("@connected", JSON.stringify(false));
+        await AsyncStorage.setItem("@auth", JSON.stringify(null))
+        deco(false)
+
+    }
 
 
     const [dossier, setDossier] = useState(async () => {
@@ -94,28 +103,43 @@ const Home = ({navigation}) => {
     );
 
 
-
     if(dossier && dossier.length > 0) {
 
 
         return(
             <View>
-                <FlatList
-                    data={dossier}
-                    renderItem={({item, index}) => {
-                        return (
-                            <Folder name={item.name} id={item.id} navigation={navigation} index={index}/>
-                        )
-                    }}
-                />
+                <View>
+                    <FlatList
+                        data={dossier}
+                        renderItem={({item, index}) => {
+                            return (
+                                <Folder name={item.name} id={item.id} navigation={navigation} index={index}/>
+                            )
+                        }}
+                    />
+                </View>
+
+                <View>
+                    <TouchableOpacity style={styles.btn_logout} onPress={logout}>
+                        <Text style={styles.btn_text}>Déconnexion</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         )
     } else {
         return (
-            <View style={styles.empty_view}>
-                <Text>Vous n'avez aucun dossier rattaché à votre compte !</Text>
-                <Text style={styles.empty_small_text}>Si il s'agit d'une erreur, veuillez contacter le cabinet.</Text>
+            <View>
+                <View style={styles.empty_view}>
+                    <Text>Vous n'avez aucun dossier rattaché à votre compte !</Text>
+                    <Text style={styles.empty_small_text}>Si il s'agit d'une erreur, veuillez contacter le cabinet.</Text>
+                </View>
+                <View>
+                    <TouchableOpacity style={styles.btn_logout} onPress={logout}>
+                        <Text style={styles.btn_text}>Déconnexion</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
+
         )
     }
 

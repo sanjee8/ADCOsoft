@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import { View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { useNavigation,NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Login from "./components/Login";
 import Home from "./components/Home";
@@ -20,6 +20,7 @@ export default function App() {
         setSigned(data || false)
     })
 
+
     return (
             <View style={{flex:1}}>
 
@@ -27,8 +28,17 @@ export default function App() {
                     {
                         isSignedIn ? (
                             <PageStack.Navigator>
-                                <PageStack.Screen name="Home" component={Home} options={{title: "Vos dossiers"}} />
-                                <PageStack.Screen name="Details" component={Details} options={({ route }) => ({ title: route.params.name })}/>
+                                <PageStack.Screen
+                                    name="Home"
+                                    options={{title: "Vos dossiers"}}
+                                >
+                                    {() => <Home deco={setSigned} navigation={useNavigation()}/>}
+                                </PageStack.Screen>
+                                <PageStack.Screen 
+                                    name="Details"
+                                    component={Details}
+                                    options={({ route }) => ({ title: route.params.name })}
+                                />
                             </PageStack.Navigator>
                         ) : (
                             <PageStack.Navigator>
