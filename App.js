@@ -13,6 +13,9 @@ const PageStack = createStackNavigator();
 
 export default function App() {
 
+    /**
+     * Connection variable
+     */
     const [isSignedIn, setSigned] = useState(async () => {
         const jsonValue = await AsyncStorage.getItem('@connected')
         const data = jsonValue != null ? JSON.parse(jsonValue) : null

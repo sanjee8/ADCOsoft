@@ -6,11 +6,12 @@ import * as ImagePicker from 'expo-image-picker';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as BackgroundFetch from "expo-background-fetch";
+import Upload from "./Upload";
 
 const TASK_NAME = "BACKGROUND_TASK"
 let interval;
 
-const Details = ({navigation, route}) => {
+const Details = ({route}) => {
 
     const [waitingList, setWaitingList] = useState(async () => {
             const jsonValue = await AsyncStorage.getItem('@waitList')
@@ -120,10 +121,10 @@ const Details = ({navigation, route}) => {
             }
         });
 
-        var object_file = {dossier: route.params.id, uri: uri}
+        const object_file = {dossier: route.params.id, uri: uri};
 
         if(connected) {
-            await uploadAsync(object_file)
+            await Upload.uploadAsync(object_file)
         } else {
 
 
@@ -155,59 +156,6 @@ const Details = ({navigation, route}) => {
         }
     }
 
-    /**
-     *
-     * @param object_file
-     * @returns {Promise<void>}
-     */
-    async function uploadAsync(object_file) {
-
-        let apiUrl = 'http://95.142.174.98/ADCOsoft1/adcosoft.php'; // HTTPS OBLIGATOIRE
-        let uriParts = uri.split('.');
-        let fileType = uriParts[uriParts.length - 1];
-
-
-        let data;
-        if(fileType === "jpg") {
-            data = {
-                uri : object_file.uri,
-                name: `image.${fileType}`,
-                type: `image/jpeg`
-            };
-        } else {
-            data = {
-                uri : object_file.uri,
-                name: `audio.${fileType}`,
-                type: `audio/x-${fileType}`
-            };
-        }
-
-
-        let formData = new FormData();
-        formData.append('file', data);
-        formData.append('dossier', object_file.dossier)
-
-        let options = {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'multipart/form-data',
-            },
-        };
-
-        let response = await fetch(apiUrl, options);
-
-        let json = await response.json();
-
-        if(json[0] === true) {
-            console.log("File uploaded")
-        } else {
-            alert(json[1])
-        }
-        console.log(json)
-
-    }
 
     /**
      * Start timer

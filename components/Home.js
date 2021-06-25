@@ -6,13 +6,16 @@ import * as BackgroundFetch from "expo-background-fetch"
 import * as TaskManager from "expo-task-manager"
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import Upload from "./Upload";
 
 
 const TASK_NAME = "BACKGROUND_TASK"
 
 TaskManager.defineTask(TASK_NAME, () => {
-
+    /**
+     * Loop connection check and upload
+     * @returns {Promise<void>}
+     */
     async function processFetch() {
 
         console.log("PROCESS UPLOAD")
@@ -34,32 +37,9 @@ TaskManager.defineTask(TASK_NAME, () => {
                 let object_file = data[0]
                 console.log(object_file.uri)
 
-                let apiUrl = 'http://95.142.174.98/ADCOsoft1/?p=upload_doc'; // HTTPS OBLIGATOIRE
-                let uriParts = object_file.uri.split('.');
-                let fileType = uriParts[uriParts.length - 1];
+                await Upload.uploadAsync(object_file);
 
 
-                const datas = {
-                    uri: object_file.uri,
-                    name: `recording.${fileType}`,
-                    type: `audio/x-${fileType}`,
-                };
-
-                let formData = new FormData();
-                formData.append('file', datas);
-                formData.append('dossier', object_file.dossier);
-
-                let options = {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'multipart/form-data',
-                    },
-                };
-
-
-                await fetch(apiUrl, options);
                 await AsyncStorage.setItem("@waitList", JSON.stringify(data.slice(1)))
                 console.log(JSON.stringify(data.slice(1)))
 
@@ -76,6 +56,9 @@ TaskManager.defineTask(TASK_NAME, () => {
 
     }
 
+    /**
+     * Call
+     */
     processFetch()
 
 
@@ -86,6 +69,10 @@ TaskManager.defineTask(TASK_NAME, () => {
 
 const Home = ({deco,navigation}) => {
 
+    /**
+     * Disconnect user
+     * @returns {Promise<void>}
+     */
     async function logout() {
 
         await AsyncStorage.setItem("@connected", JSON.stringify(false));
@@ -94,7 +81,9 @@ const Home = ({deco,navigation}) => {
 
     }
 
-
+    /**
+     * Get dossiers
+     */
     const [dossier, setDossier] = useState(async () => {
             const jsonValue = await AsyncStorage.getItem('@auth')
             const data = jsonValue != null ? JSON.parse(jsonValue) : null
@@ -105,7 +94,9 @@ const Home = ({deco,navigation}) => {
 
     if(dossier && dossier.length > 0) {
 
-
+        /**
+         * List dossiers
+         */
         return(
             <View>
                 <View>
@@ -127,6 +118,9 @@ const Home = ({deco,navigation}) => {
             </View>
         )
     } else {
+        /**
+         * Empty dossier
+         */
         return (
             <View>
                 <View style={styles.empty_view}>

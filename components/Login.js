@@ -6,6 +6,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default class Login extends React.Component {
 
+    /**
+     * Constructor
+     * @param props
+     */
     constructor(props) {
         super(props);
         this.state = {
@@ -17,6 +21,10 @@ export default class Login extends React.Component {
         };
     }
 
+    /**
+     * On login submit
+     * @returns {Promise<void>}
+     */
     async submit() {
 
         if(!this.phoneInput.isValidNumber(this.state.phone)) {
@@ -72,6 +80,11 @@ export default class Login extends React.Component {
 
     }
 
+    /**
+     * Echo success message
+     * @param text
+     * @returns {JSX.Element}
+     */
     response_success(text) {
         return(
             <Text style={styles.success}>
@@ -80,6 +93,11 @@ export default class Login extends React.Component {
         )
     }
 
+    /**
+     * Echo error message
+     * @param text
+     * @returns {JSX.Element}
+     */
     response_error(text) {
         return(
             <Text style={styles.error}>
@@ -89,7 +107,10 @@ export default class Login extends React.Component {
     }
 
 
-
+    /**
+     * Render login page
+     * @returns {JSX.Element}
+     */
     render() {
         return(
             <View style={styles.container}>
